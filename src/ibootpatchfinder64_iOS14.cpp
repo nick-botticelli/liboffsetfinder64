@@ -49,13 +49,34 @@ std::vector<patch> ibootpatchfinder64_iOS14::get_sigcheck_patch(){
     assure(img4decodemanifestexistsref);
 
     vmem iter(*_vmem,img4decodemanifestexistsref);
-    vmem iter2(*_vmem,img4decodemanifestexistsref);
 
-    while(++iter != insn::adr);
-    if((uint8_t)iter().rd() != 2) {
-        while(++iter2 != insn::adr);
-        assure((uint8_t)iter().rd() == 2);
+    // Parse the next 3 'adr' instructions. Test if rd == 2 (x2 is load register)
+//    int misses = 0;
+//    while (misses < 5) {
+//        // Find next 'adr' instruction
+//        while (++iter != insn::adr) {
+//        }
+//
+//        // If load register is x2, we are done
+//        if ((uint8_t) iter().rd() == 2) {
+//            break;
+//        }
+//
+//        misses++;
+//    }
+//    assure(misses < 5);
+
+    // Loop to the next 'bl' instruction. We should find our proper 'adr' instruction before it.
+    while (++iter != insn::bl) {
+        if (iter().type() == insn::adr) { // Operator overloading is broken?
+            // If the load register in the 'adr' instruction is x2, we are done.
+            if ((uint8_t) iter().rd() == 2) {
+                break;
+            }
+        }
     }
+    assure(iter != insn::bl);
+
     loc_t img4interposercallbackptr = iter().imm();
     debug("img4interposercallbackptr=%p",img4interposercallbackptr);
     assure(img4interposercallbackptr);
